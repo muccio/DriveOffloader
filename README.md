@@ -10,6 +10,15 @@ Native macOS 14+ (SwiftUI + AppKit) utility to analyze cold apps and folders, of
   - Replaces offloaded paths with **Offline Stubs** (`*.gdoffload` metadata stubs that do not trigger automatic Finder hover downloads) and provides a **Restore Manager** (`~/.driveoffloader_manifest.json`) to restore items locally anytime.
   - Supports single-prompt batch administrator authorization when moving/restoring `/Applications` bundles.
 
+- **Disk Usage**:
+  - Measures real APFS disk consumption across Applications, Documents, Downloads, Desktop, Movies, Music, Pictures, Developer & Tools, App Data (`~/Library`), Other Home folders, Cloud Local Cache, and Trash, with interactive folder drill-down breadcrumbs and safe cleanup.
+
+- **Large Files**:
+  - Finds the heaviest files, videos, disk images, archives, AI models, VMs, audio sample libraries, and app bundles above configurable size thresholds (`≥ 25 MB` to `≥ 1 GB`).
+
+- **Duplicates**:
+  - High-speed 3-stage duplicate file finder (exact size bucket & inode hardlink filter → partial head/mid/tail hash → full streaming SHA-256 verification) with `Keep Oldest`, `Keep Newest`, and `Keep Shortest Path` auto-selection.
+
 - **System Caches**:
   - Separate workspace tab (`Drive Offloader` | `System Caches`) to inspect safely cleanable macOS user caches, sandboxed container caches, Electron/IDE caches (`CachedData`, `Code Cache`, `GPUCache`), developer/package caches (`~/.npm`, `~/.gradle/caches`, `~/.cache/*`, Xcode `DerivedData` / `iOS DeviceSupport`), logs, `/Library/Caches`, and `~/.Trash`.
   - Classifies each target as `Safe` or `Review`, protects active Google Drive databases (`DriveFS/<account_id>`), Preferences, and Keychains, and supports Move to Trash or direct cleanup with confirmation.

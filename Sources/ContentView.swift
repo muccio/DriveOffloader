@@ -1050,13 +1050,39 @@ final class DriveOffloaderViewModel: ObservableObject {
 
 enum AppWorkspaceTab: String, CaseIterable, Identifiable {
     case offloader = "Drive Offloader"
+    case diskUsage = "Disk Usage"
+    case largeFiles = "Large Files"
+    case duplicates = "Duplicates"
     case systemCaches = "System Caches"
 
     var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .offloader: return "icloud.and.arrow.up"
+        case .diskUsage: return "chart.pie.fill"
+        case .largeFiles: return "arrow.up.doc.fill"
+        case .duplicates: return "doc.on.doc.fill"
+        case .systemCaches: return "internaldrive.fill"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .offloader: return "Offload cold apps & folders to Google Drive with local cache cleanup"
+        case .diskUsage: return "Measure space used by Applications, Documents, Downloads, Library & Developer"
+        case .largeFiles: return "Locate the heaviest individual files, videos, disk images, VMs & models"
+        case .duplicates: return "Find byte-for-byte duplicate files using multi-stage SHA-256 verification"
+        case .systemCaches: return "Inspect & safely clean macOS app, IDE, developer, log & Trash caches"
+        }
+    }
 }
 
 struct ContentView: View {
     @StateObject private var vm = DriveOffloaderViewModel()
+    @StateObject private var diskUsageVM = DiskUsageViewModel()
+    @StateObject private var largeFilesVM = LargeFilesViewModel()
+    @StateObject private var duplicatesVM = DuplicatesViewModel()
     @StateObject private var cacheVM = SystemCacheViewModel()
     @State private var activeWorkspace: AppWorkspaceTab = .offloader
 
@@ -1077,6 +1103,12 @@ struct ContentView: View {
                         detailPane
                             .frame(minWidth: 660, maxWidth: .infinity, maxHeight: .infinity)
                     }
+                case .diskUsage:
+                    DiskUsageWorkspace(vm: diskUsageVM)
+                case .largeFiles:
+                    LargeFilesWorkspace(vm: largeFilesVM)
+                case .duplicates:
+                    DuplicatesWorkspace(vm: duplicatesVM)
                 case .systemCaches:
                     SystemCacheWorkspace(vm: cacheVM)
                 }
@@ -1091,28 +1123,24 @@ struct ContentView: View {
     private var workspaceSwitcherBar: some View {
         HStack(spacing: 12) {
             Picker("Workspace", selection: $activeWorkspace) {
-                Label("Drive Offloader", systemImage: "icloud.and.arrow.up")
-                    .tag(AppWorkspaceTab.offloader)
-                Label("System Caches", systemImage: "internaldrive.fill")
-                    .tag(AppWorkspaceTab.systemCaches)
+                ForEach(AppWorkspaceTab.allCases) { tab in
+                    Label(tab.rawValue, systemImage: tab.systemImage)
+                        .tag(tab)
+                }
             }
             .labelsHidden()
             .pickerStyle(.segmented)
-            .frame(width: 320)
+            .frame(width: 610)
 
-            Text(
-                activeWorkspace == .offloader
-                    ? "Offload cold apps & folders to Google Drive with local cache cleanup"
-                    : "Inspect & safely clean macOS app, IDE, developer, log & Trash caches"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
+            Text(activeWorkspace.subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
 
             Spacer()
 
-            if activeWorkspace == .systemCaches && !cacheVM.items.isEmpty {
-                Text("Total analyzed: \(ByteFormatting.string(from: cacheVM.totalBytes))")
+            if let summaryText = workspaceSummaryPill {
+                Text(summaryText)
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
@@ -1120,6 +1148,21 @@ struct ContentView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .background(.bar)
+    }
+
+    private var workspaceSummaryPill: String? {
+        switch activeWorkspace {
+        case .offloader:
+            return nil
+        case .diskUsage:
+            return diskUsageVM.totalMeasuredBytes > 0 ? "Measured: \(ByteFormatting.string(from: diskUsageVM.totalMeasuredBytes))" : nil
+        case .largeFiles:
+            return !largeFilesVM.visibleItems.isEmpty ? "Shown: \(ByteFormatting.string(from: largeFilesVM.totalBytes))" : nil
+        case .duplicates:
+            return !duplicatesVM.visibleGroups.isEmpty ? "Wasted: \(ByteFormatting.string(from: duplicatesVM.totalWastedBytes))" : nil
+        case .systemCaches:
+            return !cacheVM.items.isEmpty ? "Analyzed: \(ByteFormatting.string(from: cacheVM.totalBytes))" : nil
+        }
     }
 
     // MARK: - Sidebar
